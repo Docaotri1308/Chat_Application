@@ -33,10 +33,10 @@ application current_app = {0};
 application app_connect_to[MAX_APP] = {0};
 
 // Connect to this app
-application app_connect_from[MAX_APP] = {0};
+// application app_connect_from[MAX_APP] = {0};
 
 // Number of app
-int sum_app_from = 0;
+// int sum_app_from = 0;
 int sum_app_to = 0;
 
 // Init screen Application
@@ -114,20 +114,20 @@ void list_connect() {
 
     for (int i = 0; i < MAX_APP; i++) {
         if (app_connect_to[i].fd > 0) {
-            printf("\n|  %d   |          %s          |  %d  |", app_connect_to[i].id, app_connect_to[i].myip, app_connect_to[i].port_num);
+            printf("\n|  %d   |          %s         |   %d   |", app_connect_to[i].id, app_connect_to[i].myip, app_connect_to[i].port_num);
         }
     }
     printf("\n| ________________________________________________ |");
 
-    printf("\n| -------------  App connection from  ------------ |");
-    printf("\n|  ID  |          IP Address          |  Port No.  |");
+    // printf("\n| -------------  App connection from  ------------ |");
+    // printf("\n|  ID  |          IP Address          |  Port No.  |");
 
-    for (int i = 0; i < sum_app_from; i++) {
-        if (app_connect_from[i].fd > 0) {
-            printf("\n|  %d   |          %s          |  %d  |", app_connect_from[i].id, app_connect_from[i].myip, app_connect_from[i].port_num);
-        }
-    }
-    printf("\n| ------------------------------------------------ |");
+    // for (int i = 0; i < sum_app_from; i++) {
+    //     if (app_connect_from[i].fd > 0) {
+    //         printf("\n|  %d   |          %s          |  %d  |", app_connect_from[i].id, app_connect_from[i].myip, app_connect_from[i].port_num);
+    //     }
+    // }
+    // printf("\n| ------------------------------------------------ |");
 }
 
 // Function to send message
@@ -199,21 +199,21 @@ static void* accept_app(void* para) {
         }
 
         // Save infor new app
-        app_connect_from[sum_app_from].fd = client_fd;
-        app_connect_from[sum_app_from].id = sum_app_from;
-        app_connect_from[sum_app_from].addr = client_addr;
-        app_connect_from[sum_app_from].port_num = ntohs(client_addr.sin_port);
+        app_connect_to[sum_app_to].fd = client_fd;
+        app_connect_to[sum_app_to].id = sum_app_to;
+        app_connect_to[sum_app_to].addr = client_addr;
+        app_connect_to[sum_app_to].port_num = ntohs(client_addr.sin_port);
 
-        inet_ntop(AF_INET, &client_addr.sin_addr, app_connect_from[sum_app_from].myip, 50);
+        inet_ntop(AF_INET, &client_addr.sin_addr, app_connect_to[sum_app_to].myip, 50);
 
-        printf("\nAccept a new connection from address: %s, setup at port: %d\n", app_connect_from[sum_app_from].myip, app_connect_from[sum_app_from].port_num);
+        printf("\nAccept a new connection from address: %s, setup at port: %d\n", app_connect_to[sum_app_to].myip, app_connect_to[sum_app_to].port_num);
 
         // Create thread to get message from new app
-        if (ret = pthread_create(&receive_thread_id, NULL, &receive_msg, &app_connect_from[sum_app_from])) {
+        if (ret = pthread_create(&receive_thread_id, NULL, &receive_msg, &app_connect_to[sum_app_to])) {
             printf("\nError: can not create thread to receive message");
         }
 
-        sum_app_from++;
+        sum_app_to++;
     }
 }
 
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
     init_screen();
 
     if (signal(SIGINT,exit_handler) == SIG_ERR) {
-        printf("Can not handler SIGINT\n");
+        printf("\nCan not handler SIGINT");
     }
 
     // Create socket for this app
@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
 
     // Read the portnumber on the command line
     if (argc < 2) {
-        printf("No port provided\ncommand: ./server <port number>\n");
+        printf("\nNo port provided\ncommand: ./server <port number>\n");
         exit(EXIT_FAILURE);
     } 
     else {
@@ -265,12 +265,17 @@ int main(int argc, char *argv[]) {
 
     printf("\nApplication is listening on port : %d\n", current_app.port_num);
 
-    if (pthread_create(&accept_thread_id, NULL, &accept_app, NULL)) {
-        printf("\nError: can not create thread for accept new app");
-        return -1;
-    }
+    // if (pthread_create(&accept_thread_id, NULL, &accept_app, NULL)) {
+    //     printf("\nError: can not create thread for accept new app");
+    //     return -1;
+    // }
 
     while(1) {
+        if (pthread_create(&accept_thread_id, NULL, &accept_app, NULL)) {
+            printf("\nError: can not create thread for accept new app");
+            return -1;
+        }
+        
         printf("\nEnter your command:  ");
         fgets(cmd, 130, stdin);
         cmd[strcspn(cmd, "\n")] = '\0';
@@ -313,6 +318,7 @@ int main(int argc, char *argv[]) {
                 printf("\nError: can not connect to new app");
             }
             else {
+                printf("\nConnection successfully\n");
                 sum_app_to++;
             }
         }
